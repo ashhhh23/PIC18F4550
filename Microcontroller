@@ -1,0 +1,110 @@
+include<p18f4550.inc>
+
+loop_cnt1	set	0x00
+loop_cnt2	set 0x01
+
+;program start template
+
+			org 0x00
+			goto start
+			org 0x08
+			retfie
+			org 0x18
+			retfie
+			
+dup_nop		macro kk
+			variable i
+
+i = 0
+			while i < kk
+			nop
+i += 1
+			endw
+			endm
+			
+start		MOVLW 	B'00000111'
+			MOVWF	TRISB, A
+			CLRF	TRISA, A
+			CLRF	TRISC, A
+			CLRF	TRISD, A
+			CLRF	PORTA, A
+			CLRF	PORTB, A
+			CLRF	PORTD, A
+LOOP		CALL 	traff1
+			BTFSC	PORTB,1	;check sw2 connection
+			CALL	traff2
+			BTFSC	PORTB,1	;check sw2 connection
+			BRA		LOOP
+			CALL 	PEDI
+			BRA		LOOP
+			
+
+traff1		BCF		PORTB, 5, A
+			BSF		PORTB, 7, A
+			CALL	DELAY10
+			BCF		PORTB, 7, A
+			BSF		PORTB, 6, A
+			CALL    DELAY5
+			BCF		PORTB, 6, A
+			BSF		PORTB, 5, A
+			CALL	DELAY10
+			RETURN
+
+traff2		BCF		PORTA, 1, A
+			BSF		PORTA, 3, A
+			CALL	DELAY10
+			BCF		PORTA, 3, A
+			BSF		PORTA, 2, A
+			CALL    DELAY5
+			BCF		PORTA, 2, A
+			BSF		PORTA, 1, A
+			CALL	DELAY10
+			RETURN
+
+DELAY5		CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			RETURN
+
+DELAY10		CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL 	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			CALL	DELAY1S
+			RETURN
+			
+PEDI		MOVLW	0x0A
+			MOVWF	PORTD,A
+AGAIN		CALL    DELAY1S
+			DECFSZ	PORTD
+			BRA		AGAIN
+			CALL	BUZZER
+			CALL	BUZZER
+			RETURN
+
+BUZZER		BSF		PORTC,2,A ;Buzzer on
+			CALL	DELAY1S
+			BCF		PORTC,2,A ;Buzzer off
+			CALL	DELAY1S
+			RETURN
+
+DELAY1S		MOVLW	D'80'		 ;1sec delay subroutine for 
+			MOVWF	loop_cnt2,A	 ;20MHz
+AGAIN1		MOVLW	D'250'
+			MOVWF	loop_cnt1,A 
+AGAIN2		dup_nop	D'247'	
+			DECFSZ	loop_cnt1,F,A	
+			BRA		AGAIN2
+			DECFSZ	loop_cnt2,F,A	
+			BRA		AGAIN1
+			NOP
+			RETURN
+			END
+
